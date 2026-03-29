@@ -1,6 +1,7 @@
 // lib/features/gallery/presentation/pages/viewer_page.dart
 import 'dart:io';
 import 'dart:ui' as ui;
+import 'package:gallery_app/features/gallery/presentation/pages/viewer_session.dart';
 import 'package:path/path.dart' as p;
 
 import 'package:chewie/chewie.dart';
@@ -55,6 +56,13 @@ class _ViewerPageState extends State<ViewerPage> {
       isar: IsarService(),
     );
     _backupOne = BackupItem(repo);
+  }
+
+  @override
+  void dispose() {
+    _pc.dispose();
+    ViewerSession.items = [];
+    super.dispose();
   }
 
   MediaItem get _current => widget.args.items[_index];
@@ -131,7 +139,9 @@ class _ViewerPageState extends State<ViewerPage> {
     if (!s.awsEnabled) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Cloud is OFF. Turn it ON in Settings → Developer.'),
+          content: const Text(
+            'Cloud is OFF. Turn it ON in Settings → Developer.',
+          ),
           action: SnackBarAction(
             label: 'Open',
             onPressed: () => context.push('/settings'),
@@ -143,7 +153,9 @@ class _ViewerPageState extends State<ViewerPage> {
     if (s.lambdaUrl.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Lambda URL is not set. Add it in Settings → Developer.'),
+          content: const Text(
+            'Lambda URL is not set. Add it in Settings → Developer.',
+          ),
           action: SnackBarAction(
             label: 'Open',
             onPressed: () => context.push('/settings'),
@@ -155,7 +167,9 @@ class _ViewerPageState extends State<ViewerPage> {
     if (s.appKey.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Tip: If your Lambda checks x-app-key, set it in Settings → Developer.'),
+          content: Text(
+            'Tip: If your Lambda checks x-app-key, set it in Settings → Developer.',
+          ),
           duration: Duration(seconds: 3),
         ),
       );
@@ -177,24 +191,26 @@ class _ViewerPageState extends State<ViewerPage> {
       setState(() => _backupBusy = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(ok ? 'Backed up this item.' : 'Could not back up this item.'),
+          content: Text(
+            ok ? 'Backed up this item.' : 'Could not back up this item.',
+          ),
         ),
       );
     } catch (e) {
       if (!mounted) return;
       setState(() => _backupBusy = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Backup failed: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Backup failed: $e')));
     }
   }
 
   Future<void> _openFromCloud() async {
     final key = _current.cloudKey ?? '';
     if (key.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Not in cloud yet')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Not in cloud yet')));
       return;
     }
     context.push('/cloudPreview', extra: key);
@@ -242,10 +258,18 @@ class _ViewerPageState extends State<ViewerPage> {
       context: context,
       builder: (c) => AlertDialog(
         title: const Text('This item is in Trash'),
-        content: const Text('Do you want to permanently delete it, or restore it?'),
+        content: const Text(
+          'Do you want to permanently delete it, or restore it?',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(c, 'cancel'), child: const Text('Cancel')),
-          TextButton(onPressed: () => Navigator.pop(c, 'restore'), child: const Text('Restore')),
+          TextButton(
+            onPressed: () => Navigator.pop(c, 'cancel'),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(c, 'restore'),
+            child: const Text('Restore'),
+          ),
           FilledButton.tonal(
             onPressed: () => Navigator.pop(c, 'delete'),
             child: const Text('Delete permanently'),
@@ -259,9 +283,9 @@ class _ViewerPageState extends State<ViewerPage> {
       await IsarService().restoreFromTrash(_current.id!);
       // If viewer started from Trash list, remove it immediately
       _removeCurrentFromList();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Restored')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Restored')));
       return;
     }
 
@@ -277,24 +301,26 @@ class _ViewerPageState extends State<ViewerPage> {
     }
     if (!mounted) return;
     _removeCurrentFromList();
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Deleted permanently')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Deleted permanently')));
   }
 
   Future<void> _renameCurrent() async {
     final path = _current.uri;
     if (path == null || path.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Rename not available for system-managed items')),
+        const SnackBar(
+          content: Text('Rename not available for system-managed items'),
+        ),
       );
       return;
     }
     final file = File(path);
     if (!await file.exists()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('File missing on disk')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('File missing on disk')));
       return;
     }
     final dir = p.dirname(path);
@@ -312,8 +338,14 @@ class _ViewerPageState extends State<ViewerPage> {
           decoration: InputDecoration(hintText: base, suffixText: ext),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(c), child: const Text('Cancel')),
-          TextButton(onPressed: () => Navigator.pop(c, ctl.text.trim()), child: const Text('Save')),
+          TextButton(
+            onPressed: () => Navigator.pop(c),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(c, ctl.text.trim()),
+            child: const Text('Save'),
+          ),
         ],
       ),
     );
@@ -326,18 +358,20 @@ class _ViewerPageState extends State<ViewerPage> {
         await IsarService().updatePath(id: _current.id!, newPath: newPath);
         final entry = await IsarService().db.mediaEntrys.get(_current.id!);
         if (entry != null) {
-          setState(() => widget.args.items[_index] = MediaMapper.toEntity(entry));
+          setState(
+            () => widget.args.items[_index] = MediaMapper.toEntity(entry),
+          );
         }
       }
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Renamed')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Renamed')));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Rename failed: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Rename failed: $e')));
     }
   }
 
@@ -345,15 +379,17 @@ class _ViewerPageState extends State<ViewerPage> {
     final path = _current.uri;
     if (path == null || path.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Copy not available for system-managed items')),
+        const SnackBar(
+          content: Text('Copy not available for system-managed items'),
+        ),
       );
       return;
     }
     final src = File(path);
     if (!await src.exists()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('File missing on disk')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('File missing on disk')));
       return;
     }
     final dir = p.dirname(path);
@@ -374,14 +410,14 @@ class _ViewerPageState extends State<ViewerPage> {
       final add = AddMediaFromPaths(repo);
       await add([dest], _current.type);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Copied')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Copied')));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Copy failed: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Copy failed: $e')));
     }
   }
 
@@ -391,71 +427,84 @@ class _ViewerPageState extends State<ViewerPage> {
   Widget build(BuildContext context) {
     final total = widget.args.items.length;
 
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: Stack(
-        children: [
-          // content
-          GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: _toggleChrome,
-            child: PageView.builder(
-              controller: _pc,
-              onPageChanged: (i) => setState(() => _index = i),
-              itemCount: total,
-              itemBuilder: (context, i) {
-                final item = widget.args.items[i];
-                final heroTag = 'm-${item.id ?? item.assetId ?? item.uri ?? i}';
-                return _ViewerItem(
-                  item: item,
-                  key: ValueKey(item.id ?? item.assetId ?? item.uri ?? i),
-                  heroTag: heroTag,
-                  showBackedBadge:
-                      (item.cloudKey ?? '').isNotEmpty || (item.backedUp == true),
-                );
+    return WillPopScope(
+      onWillPop: () async {
+        // clean state BEFORE pop
+        ViewerSession.items = [];
+        return true;
+      },
+      child: Scaffold(
+        backgroundColor: Colors.black,
+        body: Stack(
+          children: [
+            // content
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: _toggleChrome,
+              child: PageView.builder(
+                controller: _pc,
+                onPageChanged: (i) => setState(() => _index = i),
+                // itemCount: total,
+                itemCount: widget.args.items.length,
+                itemBuilder: (context, i) {
+                  final item = widget.args.items[i];
+                  final heroTag =
+                      'm-${item.id ?? item.assetId ?? item.uri ?? i}';
+                  return _ViewerItem(
+                    item: item,
+                    key: ValueKey(item.id ?? item.assetId ?? item.uri ?? i),
+                    heroTag: heroTag,
+                    showBackedBadge:
+                        (item.cloudKey ?? '').isNotEmpty ||
+                        (item.backedUp == true),
+                  );
+                },
+              ),
+            ),
+
+            // top glass bar (back + cloud)
+            _GlassTopBar(
+              visible: _chromeVisible,
+              title: '${_index + 1} / $total',
+              backedUp: _currentBackedUp,
+              busy: _backupBusy,
+              onBack: () {
+                ViewerSession.items = [];
+                context.pop();
+              },
+              onBackup: _backupCurrent,
+              onOpenCloud: _openFromCloud,
+            ),
+
+            // bottom glass bar — Share | Favourite | Edit | Delete | More
+            _GlassActionBar(
+              visible: _chromeVisible,
+              isFav: _current.favorite,
+              canEdit: _current.type == 'image' || _current.type == 'video',
+              onShare: _shareCurrent,
+              onFavToggle: _toggleFavorite,
+              onEdit: () {
+                final m = _current;
+                if (m.type == 'video') {
+                  context.push('/edit-video', extra: m);
+                } else {
+                  context.push('/edit-image', extra: m);
+                }
+              },
+              onDelete: _deleteCurrent,
+              onMore: (choice) {
+                switch (choice) {
+                  case 'rename':
+                    _renameCurrent();
+                    break;
+                  case 'copy':
+                    _copyCurrent();
+                    break;
+                }
               },
             ),
-          ),
-
-          // top glass bar (back + cloud)
-          _GlassTopBar(
-            visible: _chromeVisible,
-            title: '${_index + 1} / $total',
-            backedUp: _currentBackedUp,
-            busy: _backupBusy,
-            onBack: () => context.pop(),
-            onBackup: _backupCurrent,
-            onOpenCloud: _openFromCloud,
-          ),
-
-          // bottom glass bar — Share | Favourite | Edit | Delete | More
-          _GlassActionBar(
-            visible: _chromeVisible,
-            isFav: _current.favorite,
-            canEdit: _current.type == 'image' || _current.type == 'video',
-            onShare: _shareCurrent,
-            onFavToggle: _toggleFavorite,
-            onEdit: () {
-              final m = _current;
-              if (m.type == 'video') {
-                context.push('/edit-video', extra: m);
-              } else {
-                context.push('/edit-image', extra: m);
-              }
-            },
-            onDelete: _deleteCurrent,
-            onMore: (choice) {
-              switch (choice) {
-                case 'rename':
-                  _renameCurrent();
-                  break;
-                case 'copy':
-                  _copyCurrent();
-                  break;
-              }
-            },
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -498,7 +547,10 @@ class _GlassTopBar extends StatelessWidget {
             Expanded(
               child: Text(
                 title,
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
                 textAlign: TextAlign.center,
               ),
             ),
@@ -512,8 +564,12 @@ class _GlassTopBar extends StatelessWidget {
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 12),
                 child: SizedBox(
-                  height: 18, width: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                  height: 18,
+                  width: 18,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
                 ),
               )
             else
@@ -617,14 +673,21 @@ class _Action extends StatelessWidget {
         children: [
           Icon(icon, color: Colors.white),
           const SizedBox(height: 4),
-          Text(label, style: const TextStyle(color: Colors.white, fontSize: 12)),
+          Text(
+            label,
+            style: const TextStyle(color: Colors.white, fontSize: 12),
+          ),
         ],
       ),
     );
   }
 }
 
-Widget _glassBar({required bool visible, required bool alignTop, required Widget child}) {
+Widget _glassBar({
+  required bool visible,
+  required bool alignTop,
+  required Widget child,
+}) {
   final container = ClipRect(
     child: BackdropFilter(
       filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
@@ -646,7 +709,10 @@ Widget _glassBar({required bool visible, required bool alignTop, required Widget
   );
 
   return Positioned(
-    left: 0, right: 0, top: alignTop ? 0 : null, bottom: alignTop ? null : 0,
+    left: 0,
+    right: 0,
+    top: alignTop ? 0 : null,
+    bottom: alignTop ? null : 0,
     child: AnimatedSlide(
       duration: const Duration(milliseconds: 160),
       curve: Curves.easeOut,
@@ -765,7 +831,9 @@ class _ViewerItemState extends State<_ViewerItem> {
             tag: heroTag,
             child: AspectRatio(
               aspectRatio: ar == 0 ? 16 / 9 : ar,
-              child: _chewie == null ? const SizedBox.shrink() : Chewie(controller: _chewie!),
+              child: _chewie == null
+                  ? const SizedBox.shrink()
+                  : Chewie(controller: _chewie!),
             ),
           ),
         ),
@@ -788,7 +856,10 @@ class _ViewerItemState extends State<_ViewerItem> {
         }
         if (f == null) {
           return const Center(
-            child: Text('Image not available', style: TextStyle(color: Colors.white70)),
+            child: Text(
+              'Image not available',
+              style: TextStyle(color: Colors.white70),
+            ),
           );
         }
         return Hero(
@@ -827,7 +898,10 @@ class _BackedChip extends StatelessWidget {
           children: [
             Icon(Icons.cloud_done, color: Colors.white, size: 16),
             SizedBox(width: 6),
-            Text('Backed up', style: TextStyle(color: Colors.white, fontSize: 12)),
+            Text(
+              'Backed up',
+              style: TextStyle(color: Colors.white, fontSize: 12),
+            ),
           ],
         ),
       ),
