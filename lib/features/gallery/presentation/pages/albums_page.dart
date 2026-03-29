@@ -3,6 +3,7 @@ import 'dart:ui' as ui; // glass AppBar blur
 import 'package:flutter/material.dart';
 import 'package:gallery_app/core/widgets/app_nav.dart';
 import 'package:gallery_app/features/gallery/presentation/pages/viewer_args.dart';
+import 'package:gallery_app/features/gallery/presentation/pages/viewer_session.dart';
 import 'package:go_router/go_router.dart';
 import 'package:isar/isar.dart';
 import 'package:photo_manager/photo_manager.dart';
@@ -57,7 +58,9 @@ class _AlbumsPageState extends State<AlbumsPage>
     super.initState();
     _tc = TabController(length: tabs.length, vsync: this)
       ..addListener(() => setState(() {}));
-    _keys.addAll(List.generate(tabs.length, (_) => GlobalKey<_AlbumViewState>()));
+    _keys.addAll(
+      List.generate(tabs.length, (_) => GlobalKey<_AlbumViewState>()),
+    );
   }
 
   @override
@@ -88,7 +91,9 @@ class _AlbumsPageState extends State<AlbumsPage>
           ),
         ),
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(96), // extra height for Delete All row
+          preferredSize: const Size.fromHeight(
+            96,
+          ), // extra height for Delete All row
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -131,10 +136,7 @@ class _AlbumsPageState extends State<AlbumsPage>
           Padding(
             padding: const EdgeInsets.only(right: 4),
             child: ToggleButtons(
-              isSelected: [
-                _mode == _ViewMode.grid,
-                _mode == _ViewMode.list,
-              ],
+              isSelected: [_mode == _ViewMode.grid, _mode == _ViewMode.list],
               onPressed: (i) => setState(() {
                 _mode = i == 0 ? _ViewMode.grid : _ViewMode.list;
               }),
@@ -182,31 +184,30 @@ class _AlbumsPageState extends State<AlbumsPage>
               icon: const Icon(Icons.more_vert_rounded),
             ),
           // ⚠️ Settings button removed per request
-                        // Under the TabBar: show Delete All (Trash tab only)
-              if (_isTrashTab)
-                SafeArea(
-                  top: false,
-                  bottom: false,
-                  child: Align(
-                    alignment: Alignment.centerRight,
-                    child: Padding(
-                      padding: const EdgeInsets.only(right: 8, top: 6),
-                      child: IconButton.filledTonal(
-                        tooltip: 'Delete all (permanent)',
-                        style: ButtonStyle(
-                          backgroundColor: WidgetStatePropertyAll(
-                            Colors.red.withOpacity(.15),
-                          ),
-                          foregroundColor: const WidgetStatePropertyAll(Colors.red),
-                        ),
-                        onPressed: () => _keys[_tc.index]
-                            .currentState
-                            ?.deleteAllTrashedFromAppBar(),
-                        icon: const Icon(Icons.delete_forever_rounded),
+          // Under the TabBar: show Delete All (Trash tab only)
+          if (_isTrashTab)
+            SafeArea(
+              top: false,
+              bottom: false,
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 8, top: 6),
+                  child: IconButton.filledTonal(
+                    tooltip: 'Delete all (permanent)',
+                    style: ButtonStyle(
+                      backgroundColor: WidgetStatePropertyAll(
+                        Colors.red.withOpacity(.15),
                       ),
+                      foregroundColor: const WidgetStatePropertyAll(Colors.red),
                     ),
+                    onPressed: () => _keys[_tc.index].currentState
+                        ?.deleteAllTrashedFromAppBar(),
+                    icon: const Icon(Icons.delete_forever_rounded),
                   ),
                 ),
+              ),
+            ),
         ],
       ),
       body: Padding(
@@ -215,11 +216,7 @@ class _AlbumsPageState extends State<AlbumsPage>
           controller: _tc,
           children: [
             for (var i = 0; i < tabs.length; i++)
-              _AlbumView(
-                key: _keys[i],
-                type: tabs[i].type,
-                mode: _mode,
-              ),
+              _AlbumView(key: _keys[i], type: tabs[i].type, mode: _mode),
           ],
         ),
       ),
@@ -303,7 +300,10 @@ class _AlbumViewState extends State<_AlbumView> {
           'This will permanently delete all items in Trash. This cannot be undone.',
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(c, false),
+            child: const Text('Cancel'),
+          ),
           FilledButton.tonal(
             onPressed: () => Navigator.pop(c, true),
             child: const Text('Delete all'),
@@ -342,13 +342,19 @@ class _AlbumViewState extends State<_AlbumView> {
     Stream<List<MediaItem>> stream;
     switch (widget.type) {
       case _AlbumType.photos:
-        stream = isar.watchPhotos().map((l) => l.map(MediaMapper.toEntity).toList());
+        stream = isar.watchPhotos().map(
+          (l) => l.map(MediaMapper.toEntity).toList(),
+        );
         break;
       case _AlbumType.videos:
-        stream = isar.watchVideos().map((l) => l.map(MediaMapper.toEntity).toList());
+        stream = isar.watchVideos().map(
+          (l) => l.map(MediaMapper.toEntity).toList(),
+        );
         break;
       case _AlbumType.fav:
-        stream = isar.watchFavorites().map((l) => l.map(MediaMapper.toEntity).toList());
+        stream = isar.watchFavorites().map(
+          (l) => l.map(MediaMapper.toEntity).toList(),
+        );
         break;
       case _AlbumType.whatsapp:
         stream = isar
@@ -370,13 +376,13 @@ class _AlbumViewState extends State<_AlbumView> {
             .watchAllNotTrashed()
             .map((l) => l.map(MediaMapper.toEntity).toList())
             .map((list) {
-          const k = 'screenshot';
-          return list.where((m) {
-            final inBucket = m.bucket.toLowerCase().contains(k);
-            final hasTag = m.tags.any((t) => t.toLowerCase() == k);
-            return inBucket || hasTag;
-          }).toList();
-        });
+              const k = 'screenshot';
+              return list.where((m) {
+                final inBucket = m.bucket.toLowerCase().contains(k);
+                final hasTag = m.tags.any((t) => t.toLowerCase() == k);
+                return inBucket || hasTag;
+              }).toList();
+            });
         break;
       case _AlbumType.recent:
         stream = isar
@@ -384,14 +390,15 @@ class _AlbumViewState extends State<_AlbumView> {
             .map((l) => l.map(MediaMapper.toEntity).toList());
         break;
       case _AlbumType.trash:
-        stream =
-            isar.watchTrashed().map((l) => l.map(MediaMapper.toEntity).toList());
+        stream = isar.watchTrashed().map(
+          (l) => l.map(MediaMapper.toEntity).toList(),
+        );
         break;
       case _AlbumType.all:
       default:
-        stream = isar
-            .watchAllNotTrashed()
-            .map((l) => l.map(MediaMapper.toEntity).toList());
+        stream = isar.watchAllNotTrashed().map(
+          (l) => l.map(MediaMapper.toEntity).toList(),
+        );
         break;
     }
 
@@ -443,19 +450,23 @@ class _AlbumViewState extends State<_AlbumView> {
                           sliver: SliverGrid(
                             gridDelegate:
                                 SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: cols,
-                              crossAxisSpacing: 12,
-                              mainAxisSpacing: 12,
-                              childAspectRatio: 1,
-                            ),
+                                  crossAxisCount: cols,
+                                  crossAxisSpacing: 12,
+                                  mainAxisSpacing: 12,
+                                  childAspectRatio: 1,
+                                ),
                             delegate: SliverChildBuilderDelegate(
                               (context, index) {
                                 final item = section.items[index];
                                 final selected =
-                                    item.id != null && _selected.contains(item.id);
+                                    item.id != null &&
+                                    _selected.contains(item.id);
 
                                 final key = ValueKey(
-                                  item.id ?? item.assetId ?? item.uri ?? 'idx-$index',
+                                  item.id ??
+                                      item.assetId ??
+                                      item.uri ??
+                                      'idx-$index',
                                 );
 
                                 return _GridTile(
@@ -468,22 +479,27 @@ class _AlbumViewState extends State<_AlbumView> {
                                     if (inSelection) {
                                       _toggleSelect(item.id);
                                     } else {
-                                      final gi = indexByKey[_keyFor(item)] ?? index;
-                                      context.push(
-                                        '/viewer',
-                                        extra: ViewerArgs(
-                                          items: allFlat,
-                                          index: gi,
-                                        ),
-                                      );
+                                      final gi =
+                                          indexByKey[_keyFor(item)] ?? index;
+                                      // context.push(
+                                      //   '/viewer',
+                                      //   extra: ViewerArgs(
+                                      //     items: allFlat,
+                                      //     index: gi,
+                                      //   ),
+                                      // );
+                                      ViewerSession.items = allFlat;
+                                      context.push('/viewer/$gi');
                                     }
                                   },
                                   onLong: () => _toggleSelect(item.id),
                                   onCheckToggle: () => _toggleSelect(item.id),
                                   onFavToggle: (v) async {
                                     if (item.id != null) {
-                                      await IsarService()
-                                          .toggleFavorite(item.id!, v);
+                                      await IsarService().toggleFavorite(
+                                        item.id!,
+                                        v,
+                                      );
                                     }
                                   },
                                 );
@@ -512,21 +528,25 @@ class _AlbumViewState extends State<_AlbumView> {
                                   _toggleSelect(item.id);
                                 } else {
                                   final gi = indexByKey[_keyFor(item)] ?? index;
-                                  context.push(
-                                    '/viewer',
-                                    extra: ViewerArgs(
-                                      items: allFlat,
-                                      index: gi,
-                                    ),
-                                  );
+                                  // context.push(
+                                  //   '/viewer',
+                                  //   extra: ViewerArgs(
+                                  //     items: allFlat,
+                                  //     index: gi,
+                                  //   ),
+                                  // );
+                                  ViewerSession.items = allFlat;
+                                  context.push('/viewer/$gi');
                                 }
                               },
                               onLong: () => _toggleSelect(item.id),
                               onCheckToggle: () => _toggleSelect(item.id),
                               onFavToggle: (v) async {
                                 if (item.id != null) {
-                                  await IsarService()
-                                      .toggleFavorite(item.id!, v);
+                                  await IsarService().toggleFavorite(
+                                    item.id!,
+                                    v,
+                                  );
                                 }
                               },
                             );
@@ -560,8 +580,9 @@ class _AlbumViewState extends State<_AlbumView> {
                         }
                         setState(_selected.clear);
                       },
-                      onTrash:
-                          widget.type == _AlbumType.trash ? null : _bulkTrashWithUndo,
+                      onTrash: widget.type == _AlbumType.trash
+                          ? null
+                          : _bulkTrashWithUndo,
                       onRestore: widget.type == _AlbumType.trash
                           ? _bulkRestoreWithUndo
                           : null,
@@ -569,10 +590,14 @@ class _AlbumViewState extends State<_AlbumView> {
                           ? () async {
                               final ids = _selected.toList();
                               for (final id in ids) {
-                                final e = await IsarService().db.mediaEntrys.get(id);
+                                final e = await IsarService().db.mediaEntrys
+                                    .get(id);
                                 if (e == null) continue;
-                                if (e.assetId != null && e.assetId!.isNotEmpty) {
-                                  await MediaDelete.permanentDelete(assetId: e.assetId);
+                                if (e.assetId != null &&
+                                    e.assetId!.isNotEmpty) {
+                                  await MediaDelete.permanentDelete(
+                                    assetId: e.assetId,
+                                  );
                                 } else if (e.uri.isNotEmpty) {
                                   await MediaDelete.permanentDelete(uri: e.uri);
                                 } else {
@@ -592,8 +617,10 @@ class _AlbumViewState extends State<_AlbumView> {
                               final ids = _selected.toList();
                               final items = <MediaItem>[];
                               for (final id in ids) {
-                                final e = await IsarService().db.mediaEntrys.get(id);
-                                if (e != null) items.add(MediaMapper.toEntity(e));
+                                final e = await IsarService().db.mediaEntrys
+                                    .get(id);
+                                if (e != null)
+                                  items.add(MediaMapper.toEntity(e));
                               }
                               await repo.backupAll(items);
                               setState(_selected.clear);
@@ -721,7 +748,9 @@ class _GridTile extends StatelessWidget {
         Card(
           elevation: 2,
           margin: EdgeInsets.zero,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           clipBehavior: Clip.antiAlias,
           child: InkWell(
             onTap: onTap,
@@ -749,7 +778,11 @@ class _GridTile extends StatelessWidget {
                   const Positioned(
                     right: 8,
                     top: 8,
-                    child: Icon(Icons.play_circle_fill, color: Colors.white, size: 18),
+                    child: Icon(
+                      Icons.play_circle_fill,
+                      color: Colors.white,
+                      size: 18,
+                    ),
                   ),
                 Positioned(
                   left: 6,
@@ -758,7 +791,9 @@ class _GridTile extends StatelessWidget {
                     iconSize: 20,
                     padding: EdgeInsets.zero,
                     visualDensity: VisualDensity.compact,
-                    onPressed: item.id == null ? null : () => onFavToggle(!item.favorite),
+                    onPressed: item.id == null
+                        ? null
+                        : () => onFavToggle(!item.favorite),
                     icon: Icon(
                       item.favorite ? Icons.favorite : Icons.favorite_border,
                       color: Colors.white,
@@ -861,7 +896,8 @@ class _ListRow extends StatelessWidget {
     }
 
     final name = (() {
-      if (item.assetId != null) return '${item.bucket} ${item.type}'.toUpperCase();
+      if (item.assetId != null)
+        return '${item.bucket} ${item.type}'.toUpperCase();
       final u = item.uri ?? '';
       return u.isEmpty ? '(item)' : File(u).uri.pathSegments.last;
     })();
@@ -902,16 +938,15 @@ class _ListRow extends StatelessWidget {
             ),
             const SizedBox(width: 8),
             if (showCheckbox)
-              Checkbox(
-                value: selected,
-                onChanged: (_) => onCheckToggle(),
-              )
+              Checkbox(value: selected, onChanged: (_) => onCheckToggle())
             else ...[
               IconButton(
                 iconSize: 20,
                 padding: EdgeInsets.zero,
                 visualDensity: VisualDensity.compact,
-                onPressed: item.id == null ? null : () => onFavToggle(!item.favorite),
+                onPressed: item.id == null
+                    ? null
+                    : () => onFavToggle(!item.favorite),
                 icon: Icon(
                   item.favorite ? Icons.favorite : Icons.favorite_border,
                 ),
@@ -1006,8 +1041,7 @@ class _SelectionBar extends StatelessWidget {
               IconButton(
                 tooltip: 'Deselect all',
                 onPressed: onDeselectAll,
-                icon:
-                    const Icon(Icons.indeterminate_check_box_outlined),
+                icon: const Icon(Icons.indeterminate_check_box_outlined),
               ),
             if (onFavourite != null)
               IconButton(

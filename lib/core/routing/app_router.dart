@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:gallery_app/features/editor/presentation/image_editor_page.dart';
 import 'package:gallery_app/features/editor/presentation/video_editor_page.dart';
+import 'package:gallery_app/features/gallery/presentation/pages/viewer_session.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/gallery/presentation/pages/gallery_page.dart';
@@ -45,75 +46,125 @@ class AppRouter {
       GoRoute(
         path: '/',
         name: 'gallery',
-        pageBuilder: (c, s) => const MaterialPage(child: GalleryPage()),
+        // pageBuilder: (c, s) => const MaterialPage(child: GalleryPage()),
+        pageBuilder: (c, s) =>
+            MaterialPage(key: s.pageKey, child: const GalleryPage()),
       ),
       GoRoute(
         path: '/albums',
         name: 'albums',
-        pageBuilder: (c, s) => const MaterialPage(child: AlbumsPage()),
+        // pageBuilder: (c, s) => const MaterialPage(child: AlbumsPage()),
+        pageBuilder: (c, s) =>
+            MaterialPage(key: s.pageKey, child: const AlbumsPage()),
       ),
       GoRoute(
         path: '/settings',
         name: 'settings',
-        pageBuilder: (c, s) => const MaterialPage(child: SettingsPage()),
+        // pageBuilder: (c, s) => const MaterialPage(child: SettingsPage()),
+        pageBuilder: (c, s) =>
+            MaterialPage(key: s.pageKey, child: const SettingsPage()),
       ),
       GoRoute(
         path: '/backup',
         name: 'backup',
-        pageBuilder: (c, s) => const MaterialPage(child: BackupPage()),
+        // pageBuilder: (c, s) => const MaterialPage(child: BackupPage()),
+        pageBuilder: (c, s) =>
+            MaterialPage(key: s.pageKey, child: const BackupPage()),
       ),
+
+      // GoRoute(
+      //   path: '/viewer',
+      //   name: 'viewer',
+      //   pageBuilder: (c, s) {
+      //     final extra = s.extra;
+
+      //     debugPrint('🔄 Navigating to viewer');
+      //     debugPrint('   - Route: ${s.matchedLocation}');
+      //     debugPrint('   - Extra: $extra');
+      //     debugPrint('   - Extra type: ${extra?.runtimeType}');
+
+      //     if (extra is ViewerArgs) {
+      //       _lastViewerArgs = extra;
+
+      //       if (extra.items.isEmpty) {
+      //         debugPrint('❌ ViewerArgs has empty items list');
+      //         return MaterialPage(
+      //           child: _buildErrorPage('No items to display'),
+      //         );
+      //       }
+
+      //       if (extra.index < 0 || extra.index >= extra.items.length) {
+      //         debugPrint(
+      //           '❌ Invalid index ${extra.index} for items list of length ${extra.items.length}',
+      //         );
+      //         return MaterialPage(child: _buildErrorPage('Invalid item index'));
+      //       }
+
+      //       return MaterialPage(child: ViewerPage(args: extra));
+      //     }
+
+      //     if (extra is MediaItem) {
+      //       debugPrint('ℹ️ Using legacy MediaItem navigation');
+
+      //       final args = ViewerArgs(items: [extra], index: 0);
+      //       _lastViewerArgs = args;
+
+      //       return MaterialPage(child: ViewerPage(args: args));
+      //     }
+
+      //     if (extra == null && _lastViewerArgs != null) {
+      //       debugPrint('⚠️ Extra is null, using cached ViewerArgs');
+
+      //       return MaterialPage(child: ViewerPage(args: _lastViewerArgs!));
+      //     }
+
+      //     debugPrint('❌ Viewer opened without valid data');
+      //     return MaterialPage(
+      //       child: _buildErrorPage('Viewer opened without data'),
+      //     );
+      //   },
+      // ),
       GoRoute(
-        path: '/viewer',
+        path: '/viewer/:index',
         name: 'viewer',
         pageBuilder: (c, s) {
-          final extra = s.extra;
+          final indexText = s.pathParameters['index'];
+          final index = int.tryParse(indexText ?? '');
 
-          debugPrint('🔄 Navigating to viewer');
-          debugPrint('   - Route: ${s.matchedLocation}');
-          debugPrint('   - Extra: $extra');
-          debugPrint('   - Extra type: ${extra?.runtimeType}');
-
-          if (extra is ViewerArgs) {
-            _lastViewerArgs = extra;
-
-            if (extra.items.isEmpty) {
-              debugPrint('❌ ViewerArgs has empty items list');
-              return MaterialPage(
-                child: _buildErrorPage('No items to display'),
-              );
-            }
-
-            if (extra.index < 0 || extra.index >= extra.items.length) {
-              debugPrint(
-                '❌ Invalid index ${extra.index} for items list of length ${extra.items.length}',
-              );
-              return MaterialPage(child: _buildErrorPage('Invalid item index'));
-            }
-
-            return MaterialPage(child: ViewerPage(args: extra));
+          if (index == null) {
+            // return MaterialPage(child: _buildErrorPage('Invalid viewer index'));
+            return MaterialPage(
+              key: s.pageKey,
+              child: _buildErrorPage('Invalid viewer index'),
+            );
           }
 
-          if (extra is MediaItem) {
-            debugPrint('ℹ️ Using legacy MediaItem navigation');
+          final items = ViewerSession.items;
 
-            final args = ViewerArgs(items: [extra], index: 0);
-            _lastViewerArgs = args;
-
-            return MaterialPage(child: ViewerPage(args: args));
+          if (items.isEmpty) {
+            return MaterialPage(
+              child: _buildErrorPage('No items loaded for viewer'),
+            );
           }
 
-          if (extra == null && _lastViewerArgs != null) {
-            debugPrint('⚠️ Extra is null, using cached ViewerArgs');
-
-            return MaterialPage(child: ViewerPage(args: _lastViewerArgs!));
+          if (index < 0 || index >= items.length) {
+            return MaterialPage(child: _buildErrorPage('Invalid item index'));
           }
 
-          debugPrint('❌ Viewer opened without valid data');
+          // return MaterialPage(
+          //   child: ViewerPage(
+          //     args: ViewerArgs(items: items, index: index),
+          //   ),
+          // );
           return MaterialPage(
-            child: _buildErrorPage('Viewer opened without data'),
+            key: s.pageKey,
+            child: ViewerPage(
+              args: ViewerArgs(items: items, index: index),
+            ),
           );
         },
       ),
+
       // GoRoute(
       //   path: '/edit-image',
       //   name: 'edit-image',
@@ -132,7 +183,11 @@ class AppRouter {
               child: _buildErrorPage('Image editor opened without media item'),
             );
           }
-          return MaterialPage(child: ImageEditorPage(item: extra));
+          // return MaterialPage(child: ImageEditorPage(item: extra));
+          return MaterialPage(
+            key: s.pageKey,
+            child: ImageEditorPage(item: extra),
+          );
         },
       ),
       GoRoute(
@@ -145,7 +200,11 @@ class AppRouter {
               child: _buildErrorPage('Video editor opened without media item'),
             );
           }
-          return MaterialPage(child: VideoEditorPage(item: extra));
+          // return MaterialPage(child: VideoEditorPage(item: extra));
+          return MaterialPage(
+            key: s.pageKey,
+            child: VideoEditorPage(item: extra),
+          );
         },
       ),
     ],
