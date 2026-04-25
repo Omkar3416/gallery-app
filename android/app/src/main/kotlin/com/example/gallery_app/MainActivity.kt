@@ -1,4 +1,4 @@
-package com.example.gallery_app
+package com.omkar.galleryapp.android
 
 import io.flutter.embedding.android.FlutterActivity
 

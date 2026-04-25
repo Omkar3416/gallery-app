@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "138769918502",
+    "project_id": "zero-ads-gallery",
+    "storage_bucket": "zero-ads-gallery.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:138769918502:android:df1da940a4ba8d1ffed4e7",
+        "android_client_info": {
+          "package_name": "com.omkar.galleryapp.android"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDW9t_j0SazJaRjNAKe2U1wXNh6cq9tMec"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
