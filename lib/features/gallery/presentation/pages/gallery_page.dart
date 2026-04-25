@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:ui' as ui; // for BackdropFilter (glass)
 import 'package:flutter/material.dart';
 import 'package:gallery_app/core/widgets/app_nav.dart';
+import 'package:gallery_app/features/gallery/presentation/pages/viewer_session.dart';
 import 'package:gallery_app/services/isar/schemas/media_entry.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
@@ -152,10 +153,7 @@ class _GalleryPageState extends State<GalleryPage> {
             Padding(
               padding: const EdgeInsets.only(right: 4),
               child: ToggleButtons(
-                isSelected: [
-                  _mode == _ViewMode.grid,
-                  _mode == _ViewMode.list,
-                ],
+                isSelected: [_mode == _ViewMode.grid, _mode == _ViewMode.list],
                 onPressed: (i) => setState(() {
                   _mode = i == 0 ? _ViewMode.grid : _ViewMode.list;
                 }),
@@ -210,7 +208,7 @@ class _GalleryPageState extends State<GalleryPage> {
       ),
       body: LayoutBuilder(
         builder: (context, c) {
-          int cols = Responsive.columnsForWidth(c.maxWidth).clamp(2, 6);
+          int cols = Responsive.columnsForWidth(c.maxWidth).clamp(3, 10);
 
           return Padding(
             padding: const EdgeInsets.only(top: 64),
@@ -221,8 +219,9 @@ class _GalleryPageState extends State<GalleryPage> {
                 if (itemsAll.isEmpty) return _emptyState();
 
                 // Tag universe
-                final allTags = (itemsAll.expand((e) => e.tags)).toSet().toList()
-                  ..sort();
+                final allTags = (itemsAll.expand(
+                  (e) => e.tags,
+                )).toSet().toList()..sort();
 
                 // combined filters
                 final filtered = itemsAll.where((i) {
@@ -238,7 +237,9 @@ class _GalleryPageState extends State<GalleryPage> {
                   })();
                   final tagsL = i.tags.map((e) => e.toLowerCase());
                   final matchesText =
-                      q.isEmpty || name.contains(q) || tagsL.any((t) => t.contains(q));
+                      q.isEmpty ||
+                      name.contains(q) ||
+                      tagsL.any((t) => t.contains(q));
                   final matchesTags =
                       _selectedTags.isEmpty ||
                       _selectedTags.every((t) => i.tags.contains(t));
@@ -261,7 +262,9 @@ class _GalleryPageState extends State<GalleryPage> {
                       ),
                       const Divider(height: 0),
                       Expanded(
-                        child: _emptyState(message: 'No results match your filters'),
+                        child: _emptyState(
+                          message: 'No results match your filters',
+                        ),
                       ),
                     ],
                   );
@@ -273,12 +276,17 @@ class _GalleryPageState extends State<GalleryPage> {
                 // visible IDs for Select All
                 _visibleIds
                   ..clear()
-                  ..addAll(filtered.where((e) => e.id != null).map((e) => e.id!));
+                  ..addAll(
+                    filtered.where((e) => e.id != null).map((e) => e.id!),
+                  );
 
                 // flattened list + index map for viewer
-                final List<MediaItem> allFlat = [for (final s in sections) ...s.items];
+                final List<MediaItem> allFlat = [
+                  for (final s in sections) ...s.items,
+                ];
                 final Map<String, int> indexByKey = {
-                  for (int i = 0; i < allFlat.length; i++) _keyFor(allFlat[i]): i,
+                  for (int i = 0; i < allFlat.length; i++)
+                    _keyFor(allFlat[i]): i,
                 };
 
                 return Column(
@@ -301,69 +309,92 @@ class _GalleryPageState extends State<GalleryPage> {
                           for (final section in sections) ...[
                             SliverToBoxAdapter(
                               child: Padding(
-                                padding: const EdgeInsets.fromLTRB(16, 18, 16, 8),
+                                padding: const EdgeInsets.fromLTRB(
+                                  16,
+                                  18,
+                                  16,
+                                  8,
+                                ),
                                 child: Text(
                                   section.title,
-                                  style: Theme.of(context).textTheme.titleMedium,
+                                  style: Theme.of(
+                                    context,
+                                  ).textTheme.titleMedium,
                                 ),
                               ),
                             ),
                             if (_mode == _ViewMode.grid)
                               SliverPadding(
-                                padding: const EdgeInsets.symmetric(horizontal: 12),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                ),
                                 sliver: SliverGrid(
-                                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                                    crossAxisCount: cols,
-                                    crossAxisSpacing: 12,
-                                    mainAxisSpacing: 12,
-                                    childAspectRatio: 1,
-                                  ),
-                                  delegate: SliverChildBuilderDelegate(
-                                    (context, index) {
-                                      final item = section.items[index];
-                                      final selected =
-                                          item.id != null && _selectedIds.contains(item.id);
-                                      final stableKey = ValueKey(
-                                        item.id ?? item.assetId ?? item.uri ?? 'idx-$index',
-                                      );
-                                      return _GridTile(
-                                        key: stableKey,
-                                        item: item,
-                                        selected: selected,
-                                        showCheckbox: inSelection, // NEW
-                                        onTap: () {
-                                          if (inSelection) {
-                                            _toggleSelect(item.id);
-                                          } else {
-                                            final gi = indexByKey[_keyFor(item)] ?? 0;
-                                            context.push(
-                                              '/viewer',
-                                              extra: ViewerArgs(
-                                                items: allFlat,
-                                                index: gi,
-                                              ),
-                                            );
-                                          }
-                                        },
-                                        onLong: () => _toggleSelect(item.id), // enter selection
-                                        onCheckToggle: () => _toggleSelect(item.id), // NEW
-                                        onFavToggle: (v) {
-                                          if (item.id != null) _toggle(item.id!, v);
-                                        },
-                                      );
-                                    },
-                                    childCount: section.items.length,
-                                  ),
+                                  gridDelegate:
+                                      SliverGridDelegateWithFixedCrossAxisCount(
+                                        crossAxisCount: cols,
+                                        crossAxisSpacing: 12,
+                                        mainAxisSpacing: 12,
+                                        childAspectRatio: 1,
+                                      ),
+                                  delegate: SliverChildBuilderDelegate((
+                                    context,
+                                    index,
+                                  ) {
+                                    final item = section.items[index];
+                                    final selected =
+                                        item.id != null &&
+                                        _selectedIds.contains(item.id);
+                                    final stableKey = ValueKey(
+                                      item.id ??
+                                          item.assetId ??
+                                          item.uri ??
+                                          'idx-$index',
+                                    );
+                                    return _GridTile(
+                                      key: stableKey,
+                                      item: item,
+                                      selected: selected,
+                                      showCheckbox: inSelection, // NEW
+                                      onTap: () {
+                                        if (inSelection) {
+                                          _toggleSelect(item.id);
+                                        } else {
+                                          final gi =
+                                              indexByKey[_keyFor(item)] ?? 0;
+                                          // context.push(
+                                          //   '/viewer',
+                                          //   extra: ViewerArgs(
+                                          //     items: allFlat,
+                                          //     index: gi,
+                                          //   ),
+                                          // );
+                                          ViewerSession.items = allFlat;
+                                          context.push('/viewer/$gi');
+                                        }
+                                      },
+                                      onLong: () => _toggleSelect(
+                                        item.id,
+                                      ), // enter selection
+                                      onCheckToggle: () =>
+                                          _toggleSelect(item.id), // NEW
+                                      onFavToggle: (v) {
+                                        if (item.id != null)
+                                          _toggle(item.id!, v);
+                                      },
+                                    );
+                                  }, childCount: section.items.length),
                                 ),
                               )
                             else
                               SliverList.separated(
                                 itemCount: section.items.length,
-                                separatorBuilder: (_, __) => const Divider(height: 0),
+                                separatorBuilder: (_, __) =>
+                                    const Divider(height: 0),
                                 itemBuilder: (context, index) {
                                   final item = section.items[index];
                                   final selected =
-                                      item.id != null && _selectedIds.contains(item.id);
+                                      item.id != null &&
+                                      _selectedIds.contains(item.id);
                                   return _ListRow(
                                     item: item,
                                     selected: selected,
@@ -372,18 +403,22 @@ class _GalleryPageState extends State<GalleryPage> {
                                       if (inSelection) {
                                         _toggleSelect(item.id);
                                       } else {
-                                        final gi = indexByKey[_keyFor(item)] ?? 0;
-                                        context.push(
-                                          '/viewer',
-                                          extra: ViewerArgs(
-                                            items: allFlat,
-                                            index: gi,
-                                          ),
-                                        );
+                                        final gi =
+                                            indexByKey[_keyFor(item)] ?? 0;
+                                        // context.push(
+                                        //   '/viewer',
+                                        //   extra: ViewerArgs(
+                                        //     items: allFlat,
+                                        //     index: gi,
+                                        //   ),
+                                        // );
+                                        ViewerSession.items = allFlat;
+                                        context.push('/viewer/$gi');
                                       }
                                     },
                                     onLong: () => _toggleSelect(item.id),
-                                    onCheckToggle: () => _toggleSelect(item.id), // NEW
+                                    onCheckToggle: () =>
+                                        _toggleSelect(item.id), // NEW
                                     onFavToggle: (v) {
                                       if (item.id != null) _toggle(item.id!, v);
                                     },
@@ -576,33 +611,30 @@ class _GalleryPageState extends State<GalleryPage> {
 
   // ---------- misc ----------
   Widget _emptyState({String message = 'Welcome to your gallery'}) => Center(
-        child: Padding(
-          padding: const EdgeInsets.all(28.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.photo_library_outlined, size: 64),
-              const SizedBox(height: 12),
-              Text(
-                message,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Use “Capture” to take photos/videos or import from your gallery.',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.grey),
-              ),
-              const SizedBox(height: 16),
-              FilledButton.icon(
-                onPressed: _showCaptureSheet,
-                icon: const Icon(Icons.add_a_photo_outlined),
-                label: const Text('Add media'),
-              ),
-            ],
+    child: Padding(
+      padding: const EdgeInsets.all(28.0),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.photo_library_outlined, size: 64),
+          const SizedBox(height: 12),
+          Text(message, style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 8),
+          const Text(
+            'Use “Capture” to take photos/videos or import from your gallery.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.grey),
           ),
-        ),
-      );
+          const SizedBox(height: 16),
+          FilledButton.icon(
+            onPressed: _showCaptureSheet,
+            icon: const Icon(Icons.add_a_photo_outlined),
+            label: const Text('Add media'),
+          ),
+        ],
+      ),
+    ),
+  );
 
   Future<void> _shareSelected() async {
     if (_selectedIds.isEmpty) return;
@@ -665,8 +697,9 @@ class _SearchBar extends StatelessWidget {
                 onPressed: onClear,
               ),
         filled: true,
-        fillColor:
-            Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(.75),
+        fillColor: Theme.of(
+          context,
+        ).colorScheme.surfaceContainerHighest.withOpacity(.75),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
           borderSide: BorderSide(color: Theme.of(context).dividerColor),
@@ -732,7 +765,9 @@ class _GridTile extends StatelessWidget {
         Card(
           elevation: 2,
           margin: EdgeInsets.zero,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           clipBehavior: Clip.antiAlias,
           child: InkWell(
             onTap: onTap,
@@ -759,7 +794,11 @@ class _GridTile extends StatelessWidget {
                   const Positioned(
                     right: 8,
                     top: 8,
-                    child: Icon(Icons.play_circle_fill, color: Colors.white, size: 18),
+                    child: Icon(
+                      Icons.play_circle_fill,
+                      color: Colors.white,
+                      size: 18,
+                    ),
                   ),
                 Positioned(
                   left: 6,
@@ -875,7 +914,8 @@ class _ListRow extends StatelessWidget {
     }
 
     final name = (() {
-      if (item.assetId != null) return '${item.bucket} ${item.type}'.toUpperCase();
+      if (item.assetId != null)
+        return '${item.bucket} ${item.type}'.toUpperCase();
       final u = item.uri ?? '';
       return u.isEmpty ? '(item)' : File(u).uri.pathSegments.last;
     })();
@@ -894,10 +934,12 @@ class _ListRow extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.titleSmall),
+                  Text(
+                    name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
                   const SizedBox(height: 4),
                   Wrap(
                     spacing: 6,
@@ -905,8 +947,8 @@ class _ListRow extends StatelessWidget {
                     children: [
                       _Pill(text: item.type.toUpperCase()),
                       if (item.bucket.isNotEmpty) _Pill(text: item.bucket),
-                      if (item.tags.isNotEmpty)
-                        _Pill(text: '${item.tags.length} tag(s)'),
+                      // if (item.tags.isNotEmpty)
+                      //   _Pill(text: '${item.tags.length} tag(s)'),
                     ],
                   ),
                 ],
@@ -914,10 +956,7 @@ class _ListRow extends StatelessWidget {
             ),
             const SizedBox(width: 8),
             if (showCheckbox)
-              Checkbox(
-                value: selected,
-                onChanged: (_) => onCheckToggle(),
-              )
+              Checkbox(value: selected, onChanged: (_) => onCheckToggle())
             else ...[
               _FavButton(isFav: item.favorite, onToggle: onFavToggle),
               const SizedBox(width: 6),
@@ -982,17 +1021,20 @@ class _TagBubble extends StatelessWidget {
         color: Colors.black.withOpacity(.55),
         borderRadius: BorderRadius.circular(999),
       ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.tag, color: Colors.white, size: 14),
-            const SizedBox(width: 4),
-            Text('$count', style: const TextStyle(color: Colors.white, fontSize: 12)),
-          ],
-        ),
-      ),
+      // child: Padding(
+      //   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      //   child: Row(
+      //     mainAxisSize: MainAxisSize.min,
+      //     children: [
+      //       const Icon(Icons.tag, color: Colors.white, size: 14),
+      //       const SizedBox(width: 4),
+      //       Text(
+      //         '$count',
+      //         style: const TextStyle(color: Colors.white, fontSize: 12),
+      //       ),
+      //     ],
+      //   ),
+      // ),
     );
   }
 }
@@ -1030,10 +1072,7 @@ class _SheetAction extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 8),
-      leading: CircleAvatar(
-        radius: 22,
-        child: Icon(icon),
-      ),
+      leading: CircleAvatar(radius: 22, child: Icon(icon)),
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
       subtitle: Text(subtitle),
       onTap: onTap,

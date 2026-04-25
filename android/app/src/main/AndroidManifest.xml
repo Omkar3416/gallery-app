@@ -13,7 +13,7 @@
     <!-- Optional: camera (future step if you add capture) -->
     <uses-permission android:name="android.permission.CAMERA" />
     <application
-        android:label="gallery_app"
+        android:label="Zero Ads Gallery"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:enableOnBackInvokedCallback="true"
