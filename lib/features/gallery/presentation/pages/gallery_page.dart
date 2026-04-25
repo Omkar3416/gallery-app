@@ -208,7 +208,7 @@ class _GalleryPageState extends State<GalleryPage> {
       ),
       body: LayoutBuilder(
         builder: (context, c) {
-          int cols = Responsive.columnsForWidth(c.maxWidth).clamp(2, 6);
+          int cols = Responsive.columnsForWidth(c.maxWidth).clamp(3, 10);
 
           return Padding(
             padding: const EdgeInsets.only(top: 64),
